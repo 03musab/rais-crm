@@ -35,7 +35,7 @@ export default function CategoriesPage() {
     try {
       const teamId = `team_${user.uid}`;
       const cats = await getCategories(teamId);
-      setCategories(cats);
+      setCategories(cats as Category[]);
     } catch (error) {
       console.error('Error loading categories:', error);
     } finally {
@@ -86,7 +86,7 @@ export default function CategoriesPage() {
           name: formData.name,
           slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
           parent_id: formData.parent_id || null,
-          teamId,
+          team_id: teamId,
         });
       }
       setShowModal(false);

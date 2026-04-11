@@ -34,6 +34,7 @@ export async function getAlerts(teamId: string, acknowledged?: boolean): Promise
     id: doc.id,
     ...doc.data(),
     created_at: doc.data().created_at,
+    team_id: doc.data().teamId,
   })) as InventoryAlert[];
 }
 
@@ -67,7 +68,7 @@ export async function checkAndCreateAlerts(
 
   if (existing.empty) {
     await createAlert({
-      teamId,
+      team_id: teamId,
       product_id: productId,
       variant_id: variantId,
       type,

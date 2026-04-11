@@ -27,7 +27,7 @@ export interface Category {
   name: string;
   slug: string;
   parent_id: string | null;
-  teamId: string;
+  team_id: string;
   created_at: string;
   children?: Category[];
 }
@@ -39,7 +39,7 @@ export interface Section {
   name: string;
   type: SectionType;
   description: string | null;
-  teamId: string;
+  team_id: string;
   created_at: string;
 }
 
@@ -65,12 +65,14 @@ export interface Product {
   section_id: string | null;
   category_ids: string[];
   low_stock_threshold: number;
-  teamId: string;
+  team_id: string;
   created_at: string;
   updated_at: string;
   variants?: ProductVariant[];
   section?: Section;
   categories?: Category[];
+  price?: number;
+  inventory?: number;
 }
 
 export interface SectionProduct {
@@ -91,7 +93,7 @@ export interface InventoryAlert {
   threshold: number;
   current_inventory: number;
   acknowledged: boolean;
-  teamId: string;
+  team_id: string;
   created_at: string;
 }
 

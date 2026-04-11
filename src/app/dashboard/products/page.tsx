@@ -45,7 +45,7 @@ export default function ProductsPage() {
         getSections(teamId),
       ]);
       setProducts(prods);
-      setSections(sects);
+      setSections(sects as Section[]);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -65,7 +65,7 @@ export default function ProductsPage() {
       } else {
         await createProduct({
           ...formData,
-          teamId,
+          team_id: teamId,
           images: [],
           category_ids: [],
         });
@@ -86,8 +86,8 @@ export default function ProductsPage() {
       description: product.description || '',
       status: product.status,
       section_id: product.section_id || '',
-      price: (product as any).price || 0,
-      inventory: (product as any).inventory || 0,
+      price: product.price || 0,
+      inventory: product.inventory || 0,
       low_stock_threshold: product.low_stock_threshold || 10,
     });
     setShowModal(true);
@@ -197,7 +197,7 @@ export default function ProductsPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
-                      ${((product as any).price || 0).toFixed(2)}
+                      ${(product.price || 0).toFixed(2)}
                     </td>
                     <td className="px-4 py-3">
                       {getSectionName(product.section_id) ? (

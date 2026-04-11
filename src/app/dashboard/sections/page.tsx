@@ -42,7 +42,7 @@ export default function SectionsPage() {
     try {
       const teamId = `team_${user.uid}`;
       const sects = await getSections(teamId);
-      setSections(sects);
+      setSections(sects as Section[]);
     } catch (error) {
       console.error('Error loading sections:', error);
     } finally {
@@ -60,7 +60,7 @@ export default function SectionsPage() {
       if (editingSection) {
         await updateSection(editingSection.id, formData);
       } else {
-        await createSection({ ...formData, teamId });
+        await createSection({ ...formData, team_id: teamId });
       }
       setShowModal(false);
       setEditingSection(null);

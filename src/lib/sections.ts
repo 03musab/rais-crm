@@ -53,6 +53,6 @@ export async function createDefaultSections(teamId: string): Promise<void> {
   ];
 
   for (const section of defaults) {
-    await createSection({ ...section, teamId });
+    await createSection({ ...section, team_id: teamId });
   }
 }
