@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isAdmin(teamId) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/teams/$(teamId)/members/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function hasTeamAccess(teamId) {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/teams/$(teamId)/members/$(request.auth.uid));
+    }
+    
+    // Teams
+    match /teams/{teamId} {
+      allow read: if hasTeamAccess(teamId);
+      allow write: if isAdmin(teamId);
+      
+      // Team members subcollection
+      match /members/{userId} {
+        allow read: if hasTeamAccess(teamId);
+        allow write: if isAdmin(teamId);
+      }
+    }
+    
+    // Categories
+    match /categories/{categoryId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated(); // Add role check for production
+    }
+    
+    // Sections
+    match /sections/{sectionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    // Products
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+      
+      // Variants subcollection
+      match /variants/{variantId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+    
+    // Inventory alerts
+    match /alerts/{alertId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+  }
+}
