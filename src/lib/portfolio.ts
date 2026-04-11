@@ -1,53 +1,58 @@
-import { 
-  collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, 
-  query, orderBy, where 
-} from 'firebase/firestore';
-import { db } from './firebase';
+import { supabase } from './supabase';
 import { PortfolioItem, PortfolioCategory } from '@/types';
 
 export async function createPortfolioItem(data: Omit<PortfolioItem, 'id'>): Promise<string> {
-  const docRef = await addDoc(collection(db, 'portfolio'), {
-    ...data,
-  });
-  return docRef.id;
+  const { data: result, error } = await supabase
+    .from('portfolio')
+    .insert(data)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return result.id;
 }
 
 export async function getPortfolioItems(category?: PortfolioCategory): Promise<PortfolioItem[]> {
-  let q;
+  let query = supabase
+    .from('portfolio')
+    .select('*')
+    .order('display_order', { ascending: true });
   
   if (category) {
-    q = query(
-      collection(db, 'portfolio'),
-      where('category', '==', category),
-      orderBy('displayOrder', 'asc')
-    );
-  } else {
-    q = query(
-      collection(db, 'portfolio'),
-      orderBy('displayOrder', 'asc')
-    );
+    query = query.eq('category', category);
   }
   
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as PortfolioItem[];
+  const { data, error } = await query;
+  
+  if (error) throw error;
+  return data || [];
 }
 
 export async function getPortfolioItem(id: string): Promise<PortfolioItem | null> {
-  const docRef = doc(db, 'portfolio', id);
-  const snapshot = await getDoc(docRef);
-  if (!snapshot.exists()) return null;
-  return { id: snapshot.id, ...snapshot.data() } as PortfolioItem;
+  const { data, error } = await supabase
+    .from('portfolio')
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  if (error) return null;
+  return data;
 }
 
 export async function updatePortfolioItem(id: string, data: Partial<PortfolioItem>): Promise<void> {
-  const docRef = doc(db, 'portfolio', id);
-  await updateDoc(docRef, data);
+  const { error } = await supabase
+    .from('portfolio')
+    .update(data)
+    .eq('id', id);
+  
+  if (error) throw error;
 }
 
 export async function deletePortfolioItem(id: string): Promise<void> {
-  const docRef = doc(db, 'portfolio', id);
-  await deleteDoc(docRef);
+  const { error } = await supabase
+    .from('portfolio')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
 }

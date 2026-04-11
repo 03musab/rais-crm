@@ -109,19 +109,26 @@ export interface Service {
   id: string;
   title: string;
   description: string;
-  imageUrl: string;
+  image_url?: string;
+  imageUrl?: string;
   badge: ServiceBadge;
   icon: string;
-  whatsappMessage: string;
-  displayOrder: number;
+  whatsapp_message?: string;
+  whatsappMessage?: string;
+  display_order?: number;
+  displayOrder?: number;
+  created_at?: string;
 }
 
 export type PortfolioCategory = 'embroidery' | 'stitching' | 'logos' | 'alterations';
 
 export interface PortfolioItem {
   id: string;
-  imageUrl: string;
+  image_url?: string;
+  imageUrl?: string;
   title: string;
   category: PortfolioCategory;
-  displayOrder: number;
+  display_order?: number;
+  displayOrder?: number;
+  created_at?: string;
 }

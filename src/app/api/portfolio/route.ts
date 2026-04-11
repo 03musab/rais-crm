@@ -15,7 +15,15 @@ export async function GET(request: Request) {
     }
 
     const portfolio = await getPortfolioItems(category || undefined);
-    return NextResponse.json(portfolio);
+    // Map to match website expected format
+    const mapped = portfolio.map(p => ({
+      id: p.id,
+      imageUrl: p.image_url,
+      title: p.title,
+      category: p.category,
+      displayOrder: p.display_order,
+    }));
+    return NextResponse.json(mapped);
   } catch (error) {
     console.error('Error fetching portfolio:', error);
     return NextResponse.json(
