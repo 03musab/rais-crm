@@ -14,12 +14,20 @@ export async function createProduct(data: Omit<Product, 'id' | 'created_at' | 'u
   return docRef.id;
 }
 
-export async function getProducts(teamId: string): Promise<Product[]> {
-  const q = query(
-    collection(db, 'products'),
-    where('teamId', '==', teamId),
-    orderBy('created_at', 'desc')
-  );
+export async function getProducts(teamId?: string): Promise<Product[]> {
+  let q;
+  if (teamId && teamId !== 'default') {
+    q = query(
+      collection(db, 'products'),
+      where('teamId', '==', teamId),
+      orderBy('created_at', 'desc')
+    );
+  } else {
+    q = query(
+      collection(db, 'products'),
+      orderBy('created_at', 'desc')
+    );
+  }
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({
     id: doc.id,

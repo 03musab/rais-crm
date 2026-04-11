@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
 const products = [
   {
@@ -12,6 +12,8 @@ const products = [
     category_ids: [],
     low_stock_threshold: 10,
     teamId: "default",
+    created_at: serverTimestamp(),
+    updated_at: serverTimestamp(),
   },
   {
     name: "Logo Embroidery Service",

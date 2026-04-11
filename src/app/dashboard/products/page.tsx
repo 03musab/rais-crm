@@ -39,7 +39,7 @@ export default function ProductsPage() {
     if (!user) return;
     setLoading(true);
     try {
-      const teamId = `team_${user.uid}`;
+      const teamId = user.uid ? `team_${user.uid}` : 'default';
       const [prods, sects] = await Promise.all([
         getProducts(teamId),
         getSections(teamId),
