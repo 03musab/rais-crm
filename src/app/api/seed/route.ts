@@ -172,6 +172,10 @@ const portfolioItems = [
   imageUrl: `https://wnydpsgeiunsbfoutpwh.supabase.co/storage/v1/object/public/products/${encodeURIComponent(item.imageUrl)}`
 }));
 
+export async function GET() {
+  return POST();
+}
+
 export async function POST() {
   try {
     const servicesSnapshot = await getDocs(collection(db, 'services'));
