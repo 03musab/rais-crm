@@ -3,22 +3,23 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { 
-  Package, 
-  Wrench, 
-  Image, 
-  BarChart3, 
-  Users, 
+import {
+  Package,
+  Wrench,
+  Image,
+  BarChart3,
+  Users,
   Settings,
   LogOut,
   Mail,
   Star,
+  Gallery,
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Products', href: '/dashboard/products', icon: Package },
   { name: 'Services', href: '/dashboard/services', icon: Wrench },
-  { name: 'Portfolio Health', href: '/dashboard/inventory', icon: Image },
+  { name: 'Recent Masterpieces', href: '/dashboard/portfolio', icon: Gallery },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Contacts', href: '/dashboard/contacts', icon: Mail },
   { name: 'Reviews', href: '/dashboard/reviews', icon: Star },
