@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Package, LayoutGrid, BarChart3, Boxes, Gallery } from 'lucide-react';
+import { Package, LayoutGrid, BarChart3, Boxes } from 'lucide-react';
 import { getPortfolioItems } from '@/lib/portfolio';
 import { PortfolioCategory } from '@/types';
 
