@@ -1,8 +1,13 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Package, LayoutGrid, BarChart3, Boxes } from 'lucide-react';
+import { Package, LayoutGrid, BarChart3, Boxes, Gallery } from 'lucide-react';
+import { getPortfolioItems } from '@/lib/portfolio';
+import { PortfolioCategory } from '@/types';
 
-export default function Home() {
+export default async function Home() {
+  const portfolioItems = await getPortfolioItems();
+  const recentItems = portfolioItems.slice(0, 8);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
       <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-950/80">
@@ -54,6 +59,39 @@ export default function Home() {
             </div>
           ))}
         </div>
+
+        {recentItems.length > 0 && (
+          <div className="mt-32">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Recent Masterpieces</h2>
+              <p className="text-lg text-gray-600 dark:text-gray-400">
+                Showcasing our finest embroidery and stitching work
+              </p>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {recentItems.map((item) => (
+                <div key={item.id} className="group overflow-hidden rounded-xl bg-white shadow-md dark:bg-gray-900">
+                  <div className="aspect-square relative overflow-hidden">
+                    <img
+                      src={item.image_url || item.imageUrl || ''}
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold">{item.title}</h3>
+                    <p className="text-sm text-gray-500 capitalize">{item.category}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="text-center mt-8">
+              <Link href="/gallery">
+                <Button variant="outline" size="lg">View Full Gallery</Button>
+              </Link>
+            </div>
+          </div>
+        )}
       </main>
 
       <footer className="border-t border-gray-200 py-8 dark:border-gray-800">
