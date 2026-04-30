@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Gallery } from 'lucide-react';
+import { Plus, Pencil, Trash2, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -150,7 +150,7 @@ export default function PortfolioPage() {
       {items.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <Gallery className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <Image className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <p className="text-gray-500">No portfolio items yet. Add your first masterpiece!</p>
           </CardContent>
         </Card>

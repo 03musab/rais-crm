@@ -13,13 +13,12 @@ import {
   LogOut,
   Mail,
   Star,
-  Gallery,
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Products', href: '/dashboard/products', icon: Package },
   { name: 'Services', href: '/dashboard/services', icon: Wrench },
-  { name: 'Recent Masterpieces', href: '/dashboard/portfolio', icon: Gallery },
+  { name: 'Recent Masterpieces', href: '/dashboard/portfolio', icon: Image },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Contacts', href: '/dashboard/contacts', icon: Mail },
   { name: 'Reviews', href: '/dashboard/reviews', icon: Star },
