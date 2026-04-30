@@ -272,7 +272,8 @@ export default function ServicesPage() {
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="flex w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black"
+              placeholder="Describe this service..."
+              className="flex w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-500"
               rows={3}
             />
           </div>
@@ -284,7 +285,7 @@ export default function ServicesPage() {
                 id="badge"
                 value={formData.badge || ''}
                 onChange={(e) => setFormData({ ...formData, badge: (e.target.value || null) as ServiceBadge })}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
               >
                 <option value="">None</option>
                 {BADGE_OPTIONS.filter(b => b !== null).map(b => (
@@ -299,7 +300,7 @@ export default function ServicesPage() {
                 id="icon"
                 value={formData.icon}
                 onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
               >
                 {ICON_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.icon} {opt.label}</option>
@@ -345,7 +346,7 @@ export default function ServicesPage() {
                 id="is_active"
                 value={String(formData.is_active)}
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.value === 'true' })}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
               >
                 <option value="true">Active</option>
                 <option value="false">Inactive</option>
