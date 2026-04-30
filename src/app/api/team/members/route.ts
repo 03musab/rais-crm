@@ -1,19 +1,5 @@
 import { NextResponse } from 'next/server';
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-
-// Initialize Firebase Admin (if not already initialized)
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
-}
-
-const db = getFirestore();
+import { supabase } from '@/lib/supabase';
 
 export async function GET(request: Request) {
   try {
@@ -27,47 +13,37 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get team info
-    const teamDoc = await db.collection('teams').doc(teamId).get();
-    if (!teamDoc.exists) {
+    // Get team info from teams table
+    const { data: team, error: teamError } = await supabase
+      .from('teams')
+      .select('*')
+      .eq('id', teamId)
+      .single();
+
+    if (teamError || !team) {
       return NextResponse.json(
         { error: 'Team not found' },
         { status: 404 }
       );
     }
 
-    // Get team members
-    const membersSnapshot = await db.collection('teams').doc(teamId).collection('members').get();
-    const members = await Promise.all(
-      membersSnapshot.docs.map(async (doc) => {
-        const memberData = doc.data();
-        let user = null;
-        
-        // Try to get user info from users collection
-        try {
-          const userDoc = await db.collection('users').doc(memberData.userId).get();
-          if (userDoc.exists) {
-            user = userDoc.data();
-          }
-        } catch (e) {
-          // User info not found
-        }
+    // Get team members from team_members table
+    const { data: members, error: membersError } = await supabase
+      .from('team_members')
+      .select('*')
+      .eq('team_id', teamId);
 
-        return {
-          id: doc.id,
-          team_id: teamId,
-          user_id: memberData.userId,
-          role: memberData.role || 'editor',
-          name: user?.name || memberData.name || 'Unknown',
-          email: user?.email || memberData.email || 'No email',
-          created_at: memberData.joinedAt || new Date().toISOString(),
-        };
-      })
-    );
+    if (membersError) {
+      console.error('Error fetching members:', membersError);
+      return NextResponse.json(
+        { error: 'Failed to fetch team members' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
-      team: { id: teamId, ...teamDoc.data() },
-      members,
+      team,
+      members: members || [],
     });
   } catch (error) {
     console.error('Error fetching team:', error);
@@ -91,26 +67,42 @@ export async function POST(request: Request) {
     }
 
     // Check if team exists
-    const teamDoc = await db.collection('teams').doc(teamId).get();
-    if (!teamDoc.exists) {
+    const { data: team } = await supabase
+      .from('teams')
+      .select('id')
+      .eq('id', teamId)
+      .single();
+
+    if (!team) {
       return NextResponse.json(
         { error: 'Team not found' },
         { status: 404 }
       );
     }
 
-    // Create a new user in Firebase Auth (would need Firebase Admin SDK with auth)
-    // For now, just add to members collection
-    const memberRef = await db.collection('teams').doc(teamId).collection('members').add({
-      userId: `invited_${Date.now()}`,
-      name,
-      email,
-      role,
-      joinedAt: new Date().toISOString(),
-    });
+    // Add member to team_members table
+    const { data, error } = await supabase
+      .from('team_members')
+      .insert({
+        team_id: teamId,
+        name,
+        email,
+        role,
+        joined_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error inviting member:', error);
+      return NextResponse.json(
+        { error: 'Failed to invite member' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
-      id: memberRef.id,
+      member: data,
       message: 'Member invited successfully',
     });
   } catch (error) {
@@ -134,9 +126,19 @@ export async function PATCH(request: Request) {
       );
     }
 
-    await db.collection('teams').doc(teamId).collection('members').doc(memberId).update({
-      role,
-    });
+    const { error } = await supabase
+      .from('team_members')
+      .update({ role })
+      .eq('id', memberId)
+      .eq('team_id', teamId);
+
+    if (error) {
+      console.error('Error updating role:', error);
+      return NextResponse.json(
+        { error: 'Failed to update role' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ message: 'Role updated successfully' });
   } catch (error) {
@@ -161,7 +163,19 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await db.collection('teams').doc(teamId).collection('members').doc(memberId).delete();
+    const { error } = await supabase
+      .from('team_members')
+      .delete()
+      .eq('id', memberId)
+      .eq('team_id', teamId);
+
+    if (error) {
+      console.error('Error removing member:', error);
+      return NextResponse.json(
+        { error: 'Failed to remove member' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ message: 'Member removed successfully' });
   } catch (error) {

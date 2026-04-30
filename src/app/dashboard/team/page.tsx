@@ -54,9 +54,9 @@ export default function TeamPage() {
       if (data.members) {
         setTeamMembers(data.members.map((m: any) => ({
           id: m.id,
-          name: m.name,
-          email: m.email,
-          role: m.role,
+          name: m.name || 'Unknown',
+          email: m.email || 'No email',
+          role: m.role || 'editor',
           status: 'active',
         })));
       }
