@@ -48,9 +48,12 @@ export default function SettingsPage() {
       const data = await res.json();
       if (data.team) {
         setTeamSettings(data.team);
+      } else {
+        setTeamSettings({ id: teamId, name: '', ownerId: '', createdAt: '' });
       }
     } catch (error) {
       console.error('Error loading settings:', error);
+      setTeamSettings({ id: teamId || '', name: '', ownerId: '', createdAt: '' });
     } finally {
       setLoading(false);
     }
@@ -154,8 +157,8 @@ export default function SettingsPage() {
               <Input
                 id="teamName"
                 value={teamSettings?.name || ''}
-                onChange={(e) => setTeamSettings(teamSettings ? {
-                  ...teamSettings,
+                onChange={(e) => setTeamSettings(prev => prev ? {
+                  ...prev,
                   name: e.target.value,
                 } : null)}
                 placeholder="Enter team name"
