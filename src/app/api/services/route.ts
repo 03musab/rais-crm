@@ -1,18 +1,18 @@
 import { NextResponse } from 'next/server';
-import { getServices } from '@/lib/services';
+import { getActiveServices } from '@/lib/services';
 
 export async function GET() {
   try {
-    const services = await getServices();
+    const services = await getActiveServices();
     const mapped = services.map(s => ({
       id: s.id,
       title: s.title,
       description: s.description,
-      imageUrl: s.image_url,
       badge: s.badge,
       icon: s.icon,
+      imageUrl: s.image_url,
       whatsappMessage: s.whatsapp_message,
-      displayOrder: s.display_order,
+      sort_order: s.sort_order,
     }));
     return NextResponse.json(mapped, {
       headers: {

@@ -5,8 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   Package, 
-  LayoutGrid, 
-  FolderTree, 
+  Wrench, 
   Image, 
   BarChart3, 
   Users, 
@@ -18,6 +17,7 @@ import {
 
 const navigation = [
   { name: 'Products', href: '/dashboard/products', icon: Package },
+  { name: 'Services', href: '/dashboard/services', icon: Wrench },
   { name: 'Portfolio Health', href: '/dashboard/inventory', icon: Image },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Contacts', href: '/dashboard/contacts', icon: Mail },

@@ -1,11 +1,11 @@
 import { supabase } from './supabase';
 import { Service } from '@/types';
 
-export async function createService(data: Omit<Service, 'id'>): Promise<string> {
+export async function createService(data: Omit<Service, 'id' | 'created_at'>): Promise<string> {
   const { data: result, error } = await supabase
     .from('services')
     .insert(data)
-    .select()
+    .select('id')
     .single();
   
   if (error) throw error;
@@ -16,7 +16,18 @@ export async function getServices(): Promise<Service[]> {
   const { data, error } = await supabase
     .from('services')
     .select('*')
-    .order('display_order', { ascending: true });
+    .order('sort_order', { ascending: true });
+  
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getActiveServices(): Promise<Service[]> {
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
   
   if (error) throw error;
   return data || [];

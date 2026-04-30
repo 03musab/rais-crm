@@ -102,16 +102,14 @@ export type ServiceBadge = 'Popular' | 'Corporate' | 'Artisan' | 'Bulk' | null;
 export interface Service {
   id: string;
   title: string;
-  description: string;
-  image_url?: string;
-  imageUrl?: string;
+  description: string | null;
   badge: ServiceBadge;
   icon: string;
-  whatsapp_message?: string;
-  whatsappMessage?: string;
-  display_order?: number;
-  displayOrder?: number;
-  created_at?: string;
+  image_url: string | null;
+  whatsapp_message: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
 }
 
 export type PortfolioCategory = 'embroidery' | 'stitching' | 'logos' | 'alterations';
