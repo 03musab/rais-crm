@@ -63,7 +63,6 @@ export interface Product {
   image_url: string | null;
   category: string;
   team_id: string;
-  featured: boolean;
   created_at: string;
   updated_at: string;
 }
