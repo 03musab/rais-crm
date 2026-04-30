@@ -58,21 +58,13 @@ export interface ProductVariant {
 
 export interface Product {
   id: string;
-  name: string;
+  title: string;
   description: string | null;
-  images: string[];
-  status: 'active' | 'draft' | 'archived';
-  section_id: string | null;
-  category_ids: string[];
-  low_stock_threshold: number;
+  image_url: string | null;
+  category: string;
   team_id: string;
   created_at: string;
   updated_at: string;
-  variants?: ProductVariant[];
-  section?: Section;
-  categories?: Category[];
-  price?: number;
-  inventory?: number;
 }
 
 export interface SectionProduct {

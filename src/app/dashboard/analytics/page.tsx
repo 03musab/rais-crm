@@ -1,30 +1,33 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BarChart3, TrendingUp, Package, AlertTriangle } from 'lucide-react';
+import { BarChart3, Package, Image } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getProducts } from '@/lib/products';
 import { getSections } from '@/lib/sections';
-import { getAlerts } from '@/lib/alerts';
 import { Product, Section } from '@/types';
+
+const CATEGORY_LABELS: Record<string, string> = {
+  embroidery: 'Embroidery',
+  stitching: 'Stitching',
+  logos: 'Logo Work',
+  alterations: 'Alterations',
+};
 
 export default function AnalyticsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
-  const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [prods, sects, alrts] = await Promise.all([
+        const [prods, sects] = await Promise.all([
           getProducts(),
           getSections(),
-          getAlerts(),
         ]);
         setProducts(prods);
         setSections(sects);
-        setAlerts(alrts);
       } catch (error) {
         console.error('Error loading analytics:', error);
       } finally {
@@ -34,20 +37,14 @@ export default function AnalyticsPage() {
     loadData();
   }, []);
 
-  const totalInventory = products.reduce((sum, p) => sum + (p.inventory || 0), 0);
-  const lowStockCount = products.filter(p => (p.inventory || 0) <= (p.low_stock_threshold || 5) && (p.inventory || 0) > 0).length;
+  const categoryBreakdown = Object.keys(CATEGORY_LABELS).map(cat => ({
+    category: cat,
+    label: CATEGORY_LABELS[cat],
+    count: products.filter(p => p.category === cat).length,
+    withImage: products.filter(p => p.category === cat && p.image_url).length,
+  })).filter(c => c.count > 0);
 
-  const sectionOverview = sections.map(section => {
-    const sectionProducts = products.filter(p => p.section_id === section.id);
-    const sectionInventory = sectionProducts.reduce((sum, p) => sum + (p.inventory || 0), 0);
-    const sectionLowStock = sectionProducts.filter(p => (p.inventory || 0) <= (p.low_stock_threshold || 5)).length;
-    return {
-      name: section.name,
-      products: sectionProducts.length,
-      inventory: sectionInventory,
-      lowStock: sectionLowStock,
-    };
-  });
+  const productsWithImages = products.filter(p => p.image_url).length;
 
   if (loading) {
     return (
@@ -61,7 +58,7 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Analytics</h1>
-        <p className="text-gray-500">Section performance overview</p>
+        <p className="text-gray-500">Portfolio overview</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -91,10 +88,10 @@ export default function AnalyticsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Total Inventory</p>
-                <p className="text-2xl font-bold">{totalInventory}</p>
+                <p className="text-sm font-medium text-gray-500">With Images</p>
+                <p className="text-2xl font-bold">{productsWithImages}</p>
               </div>
-              <TrendingUp className="h-10 w-10 text-green-600" />
+              <Image className="h-10 w-10 text-green-600" />
             </div>
           </CardContent>
         </Card>
@@ -102,10 +99,10 @@ export default function AnalyticsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Low Stock Items</p>
-                <p className="text-2xl font-bold">{lowStockCount}</p>
+                <p className="text-sm font-medium text-gray-500">Categories</p>
+                <p className="text-2xl font-bold">{categoryBreakdown.length}</p>
               </div>
-              <AlertTriangle className="h-10 w-10 text-yellow-600" />
+              <BarChart3 className="h-10 w-10 text-purple-600" />
             </div>
           </CardContent>
         </Card>
@@ -113,34 +110,28 @@ export default function AnalyticsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Section Overview</CardTitle>
+          <CardTitle>Products by Category</CardTitle>
         </CardHeader>
         <CardContent>
-          {sectionOverview.length === 0 ? (
-            <p className="text-sm text-gray-500 py-8 text-center">No sections created yet</p>
+          {categoryBreakdown.length === 0 ? (
+            <p className="text-sm text-gray-500 py-8 text-center">No products added yet</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Section</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Category</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">Products</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">Total Inventory</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">Low Stock</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">With Images</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sectionOverview.map((section) => (
-                    <tr key={section.name} className="border-b">
-                      <td className="px-4 py-3 font-medium">{section.name}</td>
-                      <td className="px-4 py-3 text-right">{section.products}</td>
-                      <td className="px-4 py-3 text-right">{section.inventory}</td>
+                  {categoryBreakdown.map((cat) => (
+                    <tr key={cat.category} className="border-b">
+                      <td className="px-4 py-3 font-medium">{cat.label}</td>
+                      <td className="px-4 py-3 text-right">{cat.count}</td>
                       <td className="px-4 py-3 text-right">
-                        {section.lowStock > 0 ? (
-                          <span className="text-yellow-600">{section.lowStock}</span>
-                        ) : (
-                          <span className="text-green-600">0</span>
-                        )}
+                        <span className="text-green-600">{cat.withImage}</span>
                       </td>
                     </tr>
                   ))}
@@ -159,28 +150,30 @@ export default function AnalyticsPage() {
           {products.length === 0 ? (
             <div className="p-4 bg-blue-50 rounded-lg">
               <p className="font-medium text-blue-900">No products yet</p>
-              <p className="text-sm text-blue-700">Start by adding products to see insights about your inventory.</p>
+              <p className="text-sm text-blue-700">Start by adding products to see insights about your portfolio.</p>
             </div>
           ) : (
             <>
-              {sectionOverview.length > 0 && (
+              {categoryBreakdown.length > 0 && (
                 <div className="p-4 bg-blue-50 rounded-lg">
-                  <p className="font-medium text-blue-900">{sectionOverview.reduce((max, s) => s.inventory > max.inventory ? s : max, sectionOverview[0]).name} has the highest inventory</p>
+                  <p className="font-medium text-blue-900">
+                    {categoryBreakdown.reduce((max, c) => c.count > max.count ? c : max, categoryBreakdown[0]).label} is your largest category
+                  </p>
                   <p className="text-sm text-blue-700">
-                    With {sectionOverview.reduce((max, s) => s.inventory > max.inventory ? s : max, sectionOverview[0]).inventory} items across {sectionOverview.reduce((max, s) => s.inventory > max.inventory ? s : max, sectionOverview[0]).products} products.
+                    With {categoryBreakdown.reduce((max, c) => c.count > max.count ? c : max, categoryBreakdown[0]).count} products.
                   </p>
                 </div>
               )}
-              {lowStockCount > 0 && (
+              {productsWithImages < products.length && (
                 <div className="p-4 bg-yellow-50 rounded-lg">
-                  <p className="font-medium text-yellow-900">{lowStockCount} products need attention</p>
-                  <p className="text-sm text-yellow-700">These products are running low on stock and may need reordering.</p>
+                  <p className="font-medium text-yellow-900">{products.length - productsWithImages} products need images</p>
+                  <p className="text-sm text-yellow-700">Add images to make your portfolio more engaging.</p>
                 </div>
               )}
-              {lowStockCount === 0 && products.length > 0 && (
+              {productsWithImages === products.length && products.length > 0 && (
                 <div className="p-4 bg-green-50 rounded-lg">
-                  <p className="font-medium text-green-900">All products are well stocked</p>
-                  <p className="text-sm text-green-700">No low stock alerts at this time.</p>
+                  <p className="font-medium text-green-900">All products have images</p>
+                  <p className="text-sm text-green-700">Your portfolio is complete.</p>
                 </div>
               )}
             </>

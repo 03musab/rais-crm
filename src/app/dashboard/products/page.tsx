@@ -1,34 +1,38 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Search, Pencil, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Image as ImageIcon, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/modal';
 import { useAuth } from '@/context/auth-context';
-import { getProducts, createProduct, updateProduct, deleteProduct, getSections } from '@/lib/api';
-import { Product, Section } from '@/types';
+import { getProducts, createProduct, updateProduct, deleteProduct, uploadProductImage } from '@/lib/api';
+import { Product } from '@/types';
+
+const CATEGORIES = [
+  { value: 'embroidery', label: 'Embroidery' },
+  { value: 'stitching', label: 'Stitching' },
+  { value: 'logos', label: 'Logo Work' },
+  { value: 'alterations', label: 'Alterations' },
+];
 
 export default function ProductsPage() {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
-  const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [uploading, setUploading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '',
+    title: '',
     description: '',
-    status: 'draft' as 'active' | 'draft' | 'archived',
-    section_id: '' as string,
-    price: 0,
-    inventory: 0,
-    low_stock_threshold: 10,
+    category: 'embroidery',
   });
 
   useEffect(() => {
@@ -39,16 +43,22 @@ export default function ProductsPage() {
     setLoading(true);
     try {
       const teamId = user?.uid ? `team_${user.uid}` : 'default';
-      const [prods, sects] = await Promise.all([
-        getProducts(teamId),
-        getSections(teamId),
-      ]);
+      const prods = await getProducts(teamId);
       setProducts(prods);
-      setSections(sects as Section[]);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
     }
   };
 
@@ -57,38 +67,47 @@ export default function ProductsPage() {
     if (!user) return;
 
     const teamId = `team_${user.uid}`;
+    setUploading(true);
 
     try {
-      if (editingProduct) {
-        await updateProduct(editingProduct.id, formData);
-      } else {
-        await createProduct({
-          ...formData,
-          team_id: teamId,
-          images: [],
-          category_ids: [],
-        });
+      let imageUrl = editingProduct?.image_url || null;
+
+      if (imageFile) {
+        const tempId = editingProduct?.id || 'temp';
+        imageUrl = await uploadProductImage(imageFile, tempId);
       }
+
+      const productData = {
+        ...formData,
+        image_url: imageUrl,
+        team_id: teamId,
+      };
+
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, productData);
+      } else {
+        await createProduct(productData);
+      }
+
       setShowModal(false);
       setEditingProduct(null);
       resetForm();
       loadData();
     } catch (error) {
       console.error('Error saving product:', error);
+    } finally {
+      setUploading(false);
     }
   };
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
     setFormData({
-      name: product.name,
+      title: product.title,
       description: product.description || '',
-      status: product.status,
-      section_id: product.section_id || '',
-      price: product.price || 0,
-      inventory: product.inventory || 0,
-      low_stock_threshold: product.low_stock_threshold || 10,
+      category: product.category || 'embroidery',
     });
+    setImagePreview(product.image_url || '');
     setShowModal(true);
   };
 
@@ -103,25 +122,14 @@ export default function ProductsPage() {
   };
 
   const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      status: 'draft',
-      section_id: '',
-      price: 0,
-      inventory: 0,
-      low_stock_threshold: 10,
-    });
+    setFormData({ title: '', description: '', category: 'embroidery' });
+    setImageFile(null);
+    setImagePreview('');
   };
 
   const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+    p.title.toLowerCase().includes(search.toLowerCase())
   );
-
-  const getSectionName = (sectionId: string | null) => {
-    if (!sectionId) return null;
-    return sections.find(s => s.id === sectionId)?.name;
-  };
 
   if (loading) {
     return (
@@ -136,7 +144,7 @@ export default function ProductsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Products</h1>
-          <p className="text-gray-500">Manage your product catalog</p>
+          <p className="text-gray-500">Manage your portfolio items</p>
         </div>
         <Button onClick={() => { resetForm(); setShowModal(true); }}>
           <Plus className="mr-2 h-4 w-4" />
@@ -161,10 +169,9 @@ export default function ProductsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-gray-50 dark:bg-gray-900">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Product</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Price</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Section</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Image</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Title</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Category</th>
                   <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">Actions</th>
                 </tr>
               </thead>
@@ -172,38 +179,28 @@ export default function ProductsPage() {
                 {filteredProducts.map((product) => (
                   <tr key={product.id} className="border-b">
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                          {product.images?.[0] ? (
-                            <img src={product.images[0]} className="h-10 w-10 rounded-lg object-cover" />
-                          ) : (
+                      <div className="h-12 w-12 rounded-lg bg-gray-100 overflow-hidden">
+                        {product.image_url ? (
+                          <img src={product.image_url} alt={product.title} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center">
                             <ImageIcon className="h-5 w-5 text-gray-400" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium">{product.name}</p>
-                          {product.description && (
-                            <p className="text-sm text-gray-500 truncate max-w-[200px]">
-                              {product.description}
-                            </p>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant={product.status === 'active' ? 'success' : 'secondary'}>
-                        {product.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      ${(product.price || 0).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {getSectionName(product.section_id) ? (
-                        <Badge variant="secondary">{getSectionName(product.section_id)}</Badge>
-                      ) : (
-                        <span className="text-gray-400">Unassigned</span>
+                      <p className="font-medium">{product.title}</p>
+                      {product.description && (
+                        <p className="text-sm text-gray-500 truncate max-w-[250px]">
+                          {product.description}
+                        </p>
                       )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                        {CATEGORIES.find(c => c.value === product.category)?.label || product.category}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>
@@ -233,14 +230,37 @@ export default function ProductsPage() {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Product Name</Label>
+            <Label>Product Image</Label>
+            <div className="flex items-center gap-4">
+              <div className="h-24 w-24 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden">
+                {imagePreview ? (
+                  <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
+                ) : (
+                  <Upload className="h-8 w-8 text-gray-400" />
+                )}
+              </div>
+              <div className="flex-1">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="text-sm"
+                />
+                <p className="mt-1 text-xs text-gray-500">PNG, JPG up to 5MB</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="title">Product Name</Label>
             <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               required
             />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <textarea
@@ -251,71 +271,27 @@ export default function ProductsPage() {
               rows={3}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="price">Price</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="inventory">Inventory</Label>
-              <Input
-                id="inventory"
-                type="number"
-                value={formData.inventory}
-                onChange={(e) => setFormData({ ...formData, inventory: parseInt(e.target.value) || 0 })}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <select
-                id="status"
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-              >
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="archived">Archived</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="section">Section</Label>
-              <select
-                id="section"
-                value={formData.section_id}
-                onChange={(e) => setFormData({ ...formData, section_id: e.target.value })}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-              >
-                <option value="">No Section</option>
-                {sections.map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+
           <div className="space-y-2">
-            <Label htmlFor="threshold">Low Stock Threshold</Label>
-            <Input
-              id="threshold"
-              type="number"
-              value={formData.low_stock_threshold}
-              onChange={(e) => setFormData({ ...formData, low_stock_threshold: parseInt(e.target.value) || 10 })}
-            />
+            <Label htmlFor="category">Category</Label>
+            <select
+              id="category"
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+            >
+              {CATEGORIES.map(cat => (
+                <option key={cat.value} value={cat.value}>{cat.label}</option>
+              ))}
+            </select>
           </div>
+
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
               Cancel
             </Button>
-            <Button type="submit">
-              {editingProduct ? 'Update' : 'Create'}
+            <Button type="submit" disabled={uploading}>
+              {uploading ? 'Uploading...' : editingProduct ? 'Update' : 'Create'}
             </Button>
           </div>
         </form>

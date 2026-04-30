@@ -7,7 +7,7 @@ import {
   Package, 
   LayoutGrid, 
   FolderTree, 
-  Boxes, 
+  Image, 
   BarChart3, 
   Users, 
   Settings,
@@ -18,9 +18,7 @@ import {
 
 const navigation = [
   { name: 'Products', href: '/dashboard/products', icon: Package },
-  { name: 'Sections', href: '/dashboard/sections', icon: LayoutGrid },
-  { name: 'Categories', href: '/dashboard/categories', icon: FolderTree },
-  { name: 'Inventory', href: '/dashboard/inventory', icon: Boxes },
+  { name: 'Portfolio Health', href: '/dashboard/inventory', icon: Image },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Contacts', href: '/dashboard/contacts', icon: Mail },
   { name: 'Reviews', href: '/dashboard/reviews', icon: Star },
