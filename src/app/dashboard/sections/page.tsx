@@ -33,14 +33,13 @@ export default function SectionsPage() {
   });
 
   useEffect(() => {
-    if (user) loadSections();
-  }, [user]);
+    loadSections();
+  }, []);
 
   const loadSections = async () => {
-    if (!user) return;
     setLoading(true);
     try {
-      const teamId = `team_${user.uid}`;
+      const teamId = user?.uid ? `team_${user.uid}` : 'default';
       const sects = await getSections(teamId);
       setSections(sects as Section[]);
     } catch (error) {

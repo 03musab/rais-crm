@@ -26,14 +26,13 @@ export default function CategoriesPage() {
   });
 
   useEffect(() => {
-    if (user) loadCategories();
-  }, [user]);
+    loadCategories();
+  }, []);
 
   const loadCategories = async () => {
-    if (!user) return;
     setLoading(true);
     try {
-      const teamId = `team_${user.uid}`;
+      const teamId = user?.uid ? `team_${user.uid}` : 'default';
       const cats = await getCategories(teamId);
       setCategories(cats as Category[]);
     } catch (error) {

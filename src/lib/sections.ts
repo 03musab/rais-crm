@@ -1,50 +1,58 @@
-import { 
-  collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, 
-  query, where, orderBy 
-} from 'firebase/firestore';
-import { db } from './firebase';
+import { supabase } from './supabase';
 import { Section, SectionType } from '@/types';
 
 export async function createSection(data: Omit<Section, 'id' | 'created_at'>): Promise<string> {
-  const docRef = await addDoc(collection(db, 'sections'), {
-    ...data,
-    created_at: new Date().toISOString(),
-  });
-  return docRef.id;
+  const { data: result, error } = await supabase
+    .from('sections')
+    .insert({ ...data, created_at: new Date().toISOString() })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return result.id;
 }
 
-export async function getSections(teamId: string): Promise<Section[]> {
-  const q = query(
-    collection(db, 'sections'),
-    where('teamId', '==', teamId),
-    orderBy('created_at', 'desc')
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-    created_at: doc.data().created_at,
-  })) as Section[];
+export async function getSections(teamId?: string): Promise<Section[]> {
+  let query = supabase
+    .from('sections')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (teamId && teamId !== 'default') {
+    query = query.eq('team_id', teamId);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
 }
 
 export async function getSection(id: string): Promise<Section | null> {
-  const docRef = doc(db, 'sections', id);
-  const snapshot = await getDoc(docRef);
-  if (!snapshot.exists()) return null;
-  return { id: snapshot.id, ...snapshot.data() } as Section;
+  const { data, error } = await supabase
+    .from('sections')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) return null;
+  return data;
 }
 
 export async function updateSection(id: string, data: Partial<Section>): Promise<void> {
-  const docRef = doc(db, 'sections', id);
-  await updateDoc(docRef, data);
+  const { error } = await supabase
+    .from('sections')
+    .update(data)
+    .eq('id', id);
+
+  if (error) throw error;
 }
 
 export async function deleteSection(id: string): Promise<void> {
-  const docRef = doc(db, 'sections', id);
-  await deleteDoc(docRef);
+  const { error } = await supabase.from('sections').delete().eq('id', id);
+  if (error) throw error;
 }
 
-export async function createDefaultSections(teamId: string): Promise<void> {
+export async function createDefaultSections(teamId?: string): Promise<void> {
   const defaults: { name: string; type: SectionType; description: string }[] = [
     { name: 'Homepage', type: 'homepage', description: 'Featured products on the homepage' },
     { name: 'Featured', type: 'featured', description: 'Highlighted products across the site' },
@@ -53,6 +61,8 @@ export async function createDefaultSections(teamId: string): Promise<void> {
   ];
 
   for (const section of defaults) {
-    await createSection({ ...section, team_id: teamId });
+    await supabase
+      .from('sections')
+      .insert({ ...section, team_id: teamId || 'default' });
   }
 }

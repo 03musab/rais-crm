@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 import { 
   Package, 
   LayoutGrid, 
@@ -10,9 +11,10 @@ import {
   BarChart3, 
   Users, 
   Settings,
-  LogOut
+  LogOut,
+  Mail,
+  Star,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Products', href: '/dashboard/products', icon: Package },
@@ -20,6 +22,8 @@ const navigation = [
   { name: 'Categories', href: '/dashboard/categories', icon: FolderTree },
   { name: 'Inventory', href: '/dashboard/inventory', icon: Boxes },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+  { name: 'Contacts', href: '/dashboard/contacts', icon: Mail },
+  { name: 'Reviews', href: '/dashboard/reviews', icon: Star },
   { name: 'Team', href: '/dashboard/team', icon: Users },
 ];
 

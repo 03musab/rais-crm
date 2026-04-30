@@ -1,14 +1,47 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, LayoutGrid, Boxes, AlertTriangle, TrendingUp } from 'lucide-react';
+'use client';
 
-const stats = [
-  { name: 'Total Products', value: '0', icon: Package, color: 'text-blue-600' },
-  { name: 'Active Sections', value: '0', icon: LayoutGrid, color: 'text-green-600' },
-  { name: 'Low Stock Items', value: '0', icon: AlertTriangle, color: 'text-yellow-600' },
-  { name: 'Total Inventory', value: '0', icon: Boxes, color: 'text-purple-600' },
-];
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Package, LayoutGrid, Boxes, AlertTriangle, TrendingUp, MessageSquare, Star } from 'lucide-react';
+import { getDashboardStats } from '@/lib/products';
+import { getContacts } from '@/lib/contacts';
+import { getReviews } from '@/lib/reviews';
 
 export default function DashboardPage() {
+  const [stats, setStats] = useState({ totalProducts: 0, activeSections: 0, lowStockItems: 0, totalInventory: 0 });
+  const [contactCount, setContactCount] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [dashboardStats, contacts, reviews] = await Promise.all([
+          getDashboardStats(),
+          getContacts(),
+          getReviews(),
+        ]);
+        setStats(dashboardStats);
+        setContactCount(contacts.length);
+        setReviewCount(reviews.length);
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  const allStats = [
+    { name: 'Total Products', value: loading ? '...' : String(stats.totalProducts), icon: Package, color: 'text-blue-600' },
+    { name: 'Active Sections', value: loading ? '...' : String(stats.activeSections), icon: LayoutGrid, color: 'text-green-600' },
+    { name: 'Low Stock Items', value: loading ? '...' : String(stats.lowStockItems), icon: AlertTriangle, color: 'text-yellow-600' },
+    { name: 'Total Inventory', value: loading ? '...' : String(stats.totalInventory), icon: Boxes, color: 'text-purple-600' },
+    { name: 'Contact Submissions', value: loading ? '...' : String(contactCount), icon: MessageSquare, color: 'text-cyan-600' },
+    { name: 'Reviews', value: loading ? '...' : String(reviewCount), icon: Star, color: 'text-amber-600' },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -16,8 +49,8 @@ export default function DashboardPage() {
         <p className="text-gray-500">Welcome to your product management dashboard</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {allStats.map((stat) => (
           <Card key={stat.name}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -42,7 +75,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             <p className="text-sm text-gray-500">
-              Get started by adding your first products and organizing them into sections.
+              Navigate to Products to add your first items, or check Sections to organize your homepage layout.
             </p>
           </CardContent>
         </Card>
@@ -52,7 +85,9 @@ export default function DashboardPage() {
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">No recent activity</p>
+            <p className="text-sm text-gray-500">
+              {loading ? 'Loading...' : stats.totalProducts === 0 ? 'No products added yet. Get started by creating your first product.' : `${stats.totalProducts} products across ${stats.activeSections} sections`}
+            </p>
           </CardContent>
         </Card>
       </div>

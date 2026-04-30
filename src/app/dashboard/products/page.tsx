@@ -32,14 +32,13 @@ export default function ProductsPage() {
   });
 
   useEffect(() => {
-    if (user) loadData();
-  }, [user]);
+    loadData();
+  }, []);
 
   const loadData = async () => {
-    if (!user) return;
     setLoading(true);
     try {
-      const teamId = user.uid ? `team_${user.uid}` : 'default';
+      const teamId = user?.uid ? `team_${user.uid}` : 'default';
       const [prods, sects] = await Promise.all([
         getProducts(teamId),
         getSections(teamId),

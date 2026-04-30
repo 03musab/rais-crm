@@ -1,51 +1,48 @@
-import { 
-  collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, 
-  query, where, orderBy 
-} from 'firebase/firestore';
-import { db } from './firebase';
+import { supabase } from './supabase';
 import { InventoryAlert } from '@/types';
 
 export async function createAlert(data: Omit<InventoryAlert, 'id' | 'created_at'>): Promise<string> {
-  const docRef = await addDoc(collection(db, 'alerts'), {
-    ...data,
-    created_at: new Date().toISOString(),
-  });
-  return docRef.id;
+  const { data: result, error } = await supabase
+    .from('inventory_alerts')
+    .insert({ ...data, created_at: new Date().toISOString() })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return result.id;
 }
 
-export async function getAlerts(teamId: string, acknowledged?: boolean): Promise<InventoryAlert[]> {
-  let q;
-  if (acknowledged !== undefined) {
-    q = query(
-      collection(db, 'alerts'),
-      where('teamId', '==', teamId),
-      where('acknowledged', '==', acknowledged),
-      orderBy('created_at', 'desc')
-    );
-  } else {
-    q = query(
-      collection(db, 'alerts'),
-      where('teamId', '==', teamId),
-      orderBy('created_at', 'desc')
-    );
+export async function getAlerts(teamId?: string, acknowledged?: boolean): Promise<InventoryAlert[]> {
+  let query = supabase
+    .from('inventory_alerts')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (teamId && teamId !== 'default') {
+    query = query.eq('team_id', teamId);
   }
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-    created_at: doc.data().created_at,
-    team_id: doc.data().teamId,
-  })) as InventoryAlert[];
+
+  if (acknowledged !== undefined) {
+    query = query.eq('acknowledged', acknowledged);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
 }
 
 export async function acknowledgeAlert(id: string): Promise<void> {
-  const docRef = doc(db, 'alerts', id);
-  await updateDoc(docRef, { acknowledged: true });
+  const { error } = await supabase
+    .from('inventory_alerts')
+    .update({ acknowledged: true })
+    .eq('id', id);
+
+  if (error) throw error;
 }
 
 export async function deleteAlert(id: string): Promise<void> {
-  const docRef = doc(db, 'alerts', id);
-  await deleteDoc(docRef);
+  const { error } = await supabase.from('inventory_alerts').delete().eq('id', id);
+  if (error) throw error;
 }
 
 export async function checkAndCreateAlerts(
@@ -57,16 +54,16 @@ export async function checkAndCreateAlerts(
 ): Promise<void> {
   const type = currentInventory === 0 ? 'out_of_stock' : 'low_stock';
 
-  const alertsRef = collection(db, 'alerts');
-  const q = query(
-    alertsRef,
-    where('productId', '==', productId),
-    where('variantId', '==', variantId),
-    where('acknowledged', '==', false)
-  );
-  const existing = await getDocs(q);
+  const { data: existing, error: queryError } = await supabase
+    .from('inventory_alerts')
+    .select('id')
+    .eq('product_id', productId)
+    .eq('variant_id', variantId)
+    .eq('acknowledged', false);
 
-  if (existing.empty) {
+  if (queryError) throw queryError;
+
+  if (!existing || existing.length === 0) {
     await createAlert({
       team_id: teamId,
       product_id: productId,

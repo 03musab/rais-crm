@@ -1,47 +1,55 @@
-import { 
-  collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, 
-  query, where, orderBy 
-} from 'firebase/firestore';
-import { db } from './firebase';
+import { supabase } from './supabase';
 import { Category } from '@/types';
 
 export async function createCategory(data: Omit<Category, 'id' | 'created_at'>): Promise<string> {
-  const docRef = await addDoc(collection(db, 'categories'), {
-    ...data,
-    created_at: new Date().toISOString(),
-  });
-  return docRef.id;
+  const { data: result, error } = await supabase
+    .from('categories')
+    .insert({ ...data, created_at: new Date().toISOString() })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return result.id;
 }
 
-export async function getCategories(teamId: string): Promise<Category[]> {
-  const q = query(
-    collection(db, 'categories'),
-    where('teamId', '==', teamId),
-    orderBy('name', 'asc')
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-    created_at: doc.data().created_at,
-  })) as Category[];
+export async function getCategories(teamId?: string): Promise<Category[]> {
+  let query = supabase
+    .from('categories')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (teamId && teamId !== 'default') {
+    query = query.eq('team_id', teamId);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
 }
 
 export async function getCategory(id: string): Promise<Category | null> {
-  const docRef = doc(db, 'categories', id);
-  const snapshot = await getDoc(docRef);
-  if (!snapshot.exists()) return null;
-  return { id: snapshot.id, ...snapshot.data() } as Category;
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) return null;
+  return data;
 }
 
 export async function updateCategory(id: string, data: Partial<Category>): Promise<void> {
-  const docRef = doc(db, 'categories', id);
-  await updateDoc(docRef, data);
+  const { error } = await supabase
+    .from('categories')
+    .update(data)
+    .eq('id', id);
+
+  if (error) throw error;
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  const docRef = doc(db, 'categories', id);
-  await deleteDoc(docRef);
+  const { error } = await supabase.from('categories').delete().eq('id', id);
+  if (error) throw error;
 }
 
 export function buildCategoryTree(categories: Category[]): Category[] {
