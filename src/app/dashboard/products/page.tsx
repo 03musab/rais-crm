@@ -33,6 +33,7 @@ export default function ProductsPage() {
     title: '',
     description: '',
     category: 'embroidery',
+    featured: false,
   });
 
   useEffect(() => {
@@ -78,7 +79,10 @@ export default function ProductsPage() {
       }
 
       const productData = {
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        featured: formData.featured,
         image_url: imageUrl,
         team_id: teamId,
       };
@@ -106,6 +110,7 @@ export default function ProductsPage() {
       title: product.title,
       description: product.description || '',
       category: product.category || 'embroidery',
+      featured: product.featured || false,
     });
     setImagePreview(product.image_url || '');
     setShowModal(true);
@@ -122,7 +127,7 @@ export default function ProductsPage() {
   };
 
   const resetForm = () => {
-    setFormData({ title: '', description: '', category: 'embroidery' });
+    setFormData({ title: '', description: '', category: 'embroidery', featured: false });
     setImageFile(null);
     setImagePreview('');
   };
@@ -172,6 +177,7 @@ export default function ProductsPage() {
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Image</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Title</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Category</th>
+                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-500">Featured</th>
                   <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">Actions</th>
                 </tr>
               </thead>
@@ -201,6 +207,21 @@ export default function ProductsPage() {
                       <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
                         {CATEGORIES.find(c => c.value === product.category)?.label || product.category}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={async () => {
+                          await updateProduct(product.id, { featured: !product.featured });
+                          loadData();
+                        }}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          product.featured
+                            ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        {product.featured ? '★ Featured' : '☆ Mark'}
+                      </button>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>
@@ -284,6 +305,17 @@ export default function ProductsPage() {
                 <option key={cat.value} value={cat.value}>{cat.label}</option>
               ))}
             </select>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="featured"
+              checked={formData.featured}
+              onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+              className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+            />
+            <Label htmlFor="featured">Featured Product</Label>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
