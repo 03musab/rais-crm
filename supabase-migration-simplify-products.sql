@@ -7,17 +7,12 @@ ALTER TABLE products
   ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'embroidery',
   ADD COLUMN IF NOT EXISTS image_url TEXT;
 
--- 2. Migrate existing data: copy name -> title, images[0] -> image_url
+-- 2. Migrate existing data: copy name -> title
 UPDATE products
-SET 
-  title = name,
-  image_url = CASE 
-    WHEN images IS NOT NULL AND array_length(images, 1) > 0 THEN images[1]
-    ELSE NULL
-  END
+SET title = name
 WHERE title IS NULL;
 
--- 3. Drop columns we no longer need in the simplified CRM
+-- 3. Drop columns we no longer need
 ALTER TABLE products
   DROP COLUMN IF EXISTS price,
   DROP COLUMN IF EXISTS inventory,
@@ -27,9 +22,12 @@ ALTER TABLE products
   DROP COLUMN IF EXISTS images,
   DROP COLUMN IF EXISTS status;
 
--- 4. Make title required
+-- 4. Make title required (drop name first since it's the old required column)
 ALTER TABLE products ALTER COLUMN title SET NOT NULL;
 
--- 5. Add indexes for website queries
+-- 5. Drop the old name column after title is set
+ALTER TABLE products DROP COLUMN IF EXISTS name;
+
+-- 6. Add indexes for website queries
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 CREATE INDEX IF NOT EXISTS idx_products_created_desc ON products(created_at DESC);
